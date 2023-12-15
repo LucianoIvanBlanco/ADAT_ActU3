@@ -6,7 +6,6 @@ import org.hibernate.Session;
 import org.hibernate.query.Query;
 
 import java.sql.Date;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Scanner;
 
@@ -18,10 +17,9 @@ public class Main {
         try {
             session = HibernateUtil.getSession();
 
-            // Menu interactivo
             int option;
             do {
-                mostrarMenu();
+                mainMenu();
                 Scanner sc = new Scanner(System.in);
                 option = sc.nextInt();
                 sc.nextLine();                                      // Consumimos el salto de línea
@@ -52,7 +50,7 @@ public class Main {
                         System.out.println("Saliendo del programa. ¡Hasta luego!");
                         break;
                     default:
-                        System.out.println("Opción no válida. Inténtelo de nuevo.");
+                        System.out.println("Opcion no valida. Intentelo de nuevo.");
                 }
             } while (option != 0);
 
@@ -63,7 +61,7 @@ public class Main {
         }
     }
 
-    private static void mostrarMenu() {
+    private static void mainMenu() {
         System.out.println("=== Menú Principal ===");
         System.out.println("1. Crear autor y libros");
         System.out.println("2. Mostrar autores y libros");
@@ -77,45 +75,110 @@ public class Main {
         System.out.print("Seleccione una opción: ");
     }
 
+    private static void createAuthorAndBooks() {                                       //Eleccion de elemento a crear
+        Scanner scanner = new Scanner(System.in);
 
-    private static void createAuthorAndBooks() {                        // Creamos autores y libros deseados
+        System.out.println("Seleccione una opción:");
+        System.out.println("1. Crear autor");
+        System.out.println("2. Crear libro");
+        int option = scanner.nextInt();
+        scanner.nextLine();
+
+        if (option == 1) {
+            createAuthor(scanner);
+        } else if (option == 2) {
+            createBook(scanner);
+        } else {
+            System.out.println("Opcion no válida.");
+        }
+    }
+
+    private static void createAuthor(Scanner scanner) {                                 // Creamos autores
+        System.out.println("Ingrese el DNI del autor:");
+        int authorDni = scanner.nextInt();
+        scanner.nextLine();
+
+        Authors existingAuthor = session.get(Authors.class, authorDni);
+        if (existingAuthor != null) {
+            System.out.println("Ya existe un autor con el DNI: " + authorDni);
+            return;
+        }
+
+        System.out.println("Ingrese el nombre del autor:");
+        String authorName = scanner.nextLine();
+
         session.beginTransaction();
 
-        Authors author1 = new Authors();
-        author1.setDni(12345678);
-        author1.setName("J. R. R. Tolkien");
-        session.persist(author1);
-
-        Books book1 = new Books();
-        book1.setId(book1.getId());
-        book1.setTitle("El señor de los anillos");
-        LocalDate date1 = LocalDate.of(1954, 7, 29);
-        book1.setPublicationDate(java.sql.Date.valueOf(date1));  // Utiliza java.sql.Date
-        book1.setDniAuthor(author1.getDni());
-        book1.setEditorial("U-tadBooks");
-        session.persist(book1);
-
-        Books book2 = new Books();
-        book2.setId(book2.getId());
-        book2.setTitle("Beowulf");
-        LocalDate date2 = LocalDate.of(2014, 5, 22);
-        book2.setPublicationDate(java.sql.Date.valueOf(date2));  // Utiliza java.sql.Date
-        book2.setDniAuthor(author1.getDni());
-        book2.setEditorial("U-tadBooks");
-        session.persist(book2);
+        Authors newAuthor = new Authors();
+        newAuthor.setDni(authorDni);
+        newAuthor.setName(authorName);
+        session.persist(newAuthor);
 
         session.getTransaction().commit();
+
+        System.out.println("Autor creado correctamente.");
     }
+
+    private static void createBook(Scanner scanner) {                                   // Creamos libros
+        System.out.println("Ingrese el ID del libro:");
+        int bookId = scanner.nextInt();
+        scanner.nextLine();
+
+        Books existingBook = session.get(Books.class, bookId);
+        if (existingBook != null) {
+            System.out.println("Ya existe un libro con el ID: " + bookId);
+            return;
+        }
+
+        System.out.println("Ingrese el DNI del autor del libro:");
+        int authorDni = scanner.nextInt();
+        scanner.nextLine();
+
+        Authors author = session.get(Authors.class, authorDni);
+        if (author == null) {
+            System.out.println("No se encontró el autor con DNI: " + authorDni);
+            return;
+        }
+
+        System.out.println("Ingrese el título del libro:");
+        String bookTitle = scanner.nextLine();
+
+        System.out.println("Ingrese la fecha de publicación del libro (en el formato yyyy-mm-dd):");
+        String publicationDateString = scanner.nextLine();
+        Date publicationDate = Date.valueOf(publicationDateString);
+
+        System.out.println("Ingrese la editorial del libro:");
+        String bookEditorial = scanner.nextLine();
+
+        session.beginTransaction();
+
+        Books newBook = new Books();
+        newBook.setId(bookId);
+        newBook.setTitle(bookTitle);
+        newBook.setPublicationDate(publicationDate);
+        newBook.setDniAuthor(authorDni);
+        newBook.setEditorial(bookEditorial);
+        newBook.setAuthor(author);                                          // Establecermos la relación
+
+        newBook = (Books) session.merge(newBook);
+        session.persist(newBook);
+
+        session.getTransaction().commit();
+
+        System.out.println("Libro creado correctamente.");
+    }
+
 
     private static void readAuthorAndBooks() {                              // Imprimimos autores y libros existentes
 
         List<Authors> authorsList = session.createQuery("FROM Authors", Authors.class).list();
+        System.out.println("===== AUTORES: =====");
         for (Authors at : authorsList) {
-            System.out.println("===== AUTOR: ===== " +
-                    " \nDNI: " + at.getDni() + ", Nombre: " + at.getName() + ", \n===== LIBROS: =====");
+            System.out.println(" DNI: " + at.getDni() + ", Nombre: " + at.getName());
         }
 
         List<Books> bookList = session.createQuery("FROM Books", Books.class).list();
+        System.out.println("===== LIBROS: =====");
         for (Books bk : bookList) {
             System.out.println(" ID: " + bk.getId() + ", Nombre: " + bk.getTitle() + ", Author: " + bk.getDniAuthor() +
                     ", Fecha de publicacion: " + bk.getPublicationDate() + ", Editorial: " + bk.getEditorial());
@@ -178,7 +241,6 @@ public class Main {
     }
 
     private static String checkDni() {
-        // Elegimos el autor que queremos eliminar
         System.out.println("Ingrese el dni del autor: ");
         Scanner sc = new Scanner(System.in);
         String dni = sc.nextLine();
@@ -187,11 +249,10 @@ public class Main {
 
 
     private static int checkId() {
-        // Elegimos el libro que queremos eliminar
-        System.out.println("Ingrese el id del libro que desea eliminar: ");
+        System.out.println("Ingrese el id del libro: ");
         Scanner sc = new Scanner(System.in);
-        int idDelete = sc.nextInt();
-        return idDelete;
+        int id = sc.nextInt();
+        return id;
     }
 
     private static void deleteAuthor(String dni) {                                   // Eliminamos autores
@@ -237,7 +298,6 @@ public class Main {
         System.out.println("========================");
     }
 
-    // Método para encontrar autores que han publicado libros en un rango de años específico usando HQL
     private static void queryAuthorsByPublicationYearRange() {
         Scanner sc = new Scanner(System.in);
         System.out.println("Ingrese el año desde el cual quiere comenzar a buscar: ");
