@@ -11,8 +11,9 @@ public class Books {
     private int id;
     private String title;
     private Date publicationDate;
-    private Integer dniAuthor;
+    private int dniAuthor;  // Cambiado de Integer a int
     private String editorial;
+    private Authors author;  // Agregada relación bidireccional
 
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
@@ -47,11 +48,11 @@ public class Books {
 
     @Basic
     @Column(name = "dni_author")
-    public Integer getDniAuthor() {
+    public int getDniAuthor() {
         return dniAuthor;
     }
 
-    public void setDniAuthor(Integer dniAuthor) {
+    public void setDniAuthor(int dniAuthor) {
         this.dniAuthor = dniAuthor;
     }
 
@@ -65,12 +66,22 @@ public class Books {
         this.editorial = editorial;
     }
 
+    @ManyToOne
+    @JoinColumn(name = "dni_author", referencedColumnName = "dni", insertable = false, updatable = false)
+    public Authors getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(Authors author) {
+        this.author = author;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Books books = (Books) o;
-        return id == books.id && Objects.equals(title, books.title) && Objects.equals(publicationDate, books.publicationDate) && Objects.equals(dniAuthor, books.dniAuthor) && Objects.equals(editorial, books.editorial);
+        return id == books.id && dniAuthor == books.dniAuthor && Objects.equals(title, books.title) && Objects.equals(publicationDate, books.publicationDate) && Objects.equals(editorial, books.editorial);
     }
 
     @Override
@@ -78,3 +89,4 @@ public class Books {
         return Objects.hash(id, title, publicationDate, dniAuthor, editorial);
     }
 }
+

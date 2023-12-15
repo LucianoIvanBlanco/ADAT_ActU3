@@ -2,6 +2,7 @@ package models;
 
 import jakarta.persistence.*;
 
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -9,9 +10,8 @@ import java.util.Objects;
 public class Authors {
     private int dni;
     private String name;
-    private int idLibro;
+    private List<Books> books;
 
-//    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Id
     @Column(name = "dni")
     public int getDni() {
@@ -32,14 +32,13 @@ public class Authors {
         this.name = name;
     }
 
-    @Basic
-    @Column(name = "id_libro")
-    public int getIdLibro() {
-        return idLibro;
+    @OneToMany(mappedBy = "author", cascade = CascadeType.ALL)
+    public List<Books> getBooks() {
+        return books;
     }
 
-    public void setIdLibro(int idLibro) {
-        this.idLibro = idLibro;
+    public void setBooks(List<Books> books) {
+        this.books = books;
     }
 
     @Override
@@ -47,11 +46,11 @@ public class Authors {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Authors authors = (Authors) o;
-        return dni == authors.dni && idLibro == authors.idLibro && Objects.equals(name, authors.name);
+        return dni == authors.dni && Objects.equals(name, authors.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(dni, name, idLibro);
+        return Objects.hash(dni, name);
     }
 }
